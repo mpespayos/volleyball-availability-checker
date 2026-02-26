@@ -10,18 +10,25 @@ async function check() {
     const browser = await chromium.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
 
-    // Give slow cloud loads more time
+    // More generous timeouts for GitHub runners
     page.setDefaultTimeout(60000);
 
-    await page.goto(START_URL, { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle");
+    await page.goto(START_URL, { waitUntil: "load" });
 
-    // Robust selector (handles -, –, — and spacing)
+    // Wait for *something* on the grid page that indicates buttons rendered.
+    // This is intentionally broad: any element containing a hyphen category label like " - ".
+    await page.waitForSelector("text=/\\w+\\s*[-–—]\\s*\\w+/i", { timeout: 60000 });
+
+    // Click volleyball tile (dash tolerant)
     const volleyballTile = page.locator("text=/volleyball\\s*[-–—]\\s*adult/i").first();
-    await volleyballTile.waitFor({ state: "visible" });
+    await volleyballTile.waitFor({ state: "visible", timeout: 60000 });
     await volleyballTile.click();
 
-    await page.waitForLoadState("networkidle");
+    // Now wait for either the FULL text or the date row to show up on TimeSelection page
+    await page.waitForSelector(
+        "text=/No more available time slots/i, text=/Select a date and time/i",
+        { timeout: 60000 }
+    );
 
     const body = await page.locator("body").innerText();
     const isFull = body.includes("No more available time slots");
