@@ -10,16 +10,24 @@ async function check() {
     const browser = await chromium.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
 
+    // Give slow cloud loads more time
+    page.setDefaultTimeout(60000);
+
     await page.goto(START_URL, { waitUntil: "domcontentloaded" });
-    await page.getByText("Volleyball - adult", { exact: true }).click();
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState("networkidle");
+
+    // Robust selector (handles -, –, — and spacing)
+    const volleyballTile = page.locator("text=/volleyball\\s*[-–—]\\s*adult/i").first();
+    await volleyballTile.waitFor({ state: "visible" });
+    await volleyballTile.click();
+
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").innerText();
     const isFull = body.includes("No more available time slots");
+    const status = isFull ? "FULL" : "AVAILABLE";
 
     await browser.close();
-
-    const status = isFull ? "FULL" : "AVAILABLE";
 
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto"
@@ -29,9 +37,7 @@ async function check() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            content: `CARDELREC Volleyball (Thu 7:45–9:45 PM)
-Status: ${status}
-Checked: ${torontoTime}`
+            content: `CARDELREC Volleyball (Thu 7:45–9:45 PM)\nStatus: ${status}\nChecked: ${torontoTime}`
         })
     });
 
