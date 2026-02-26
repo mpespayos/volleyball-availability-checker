@@ -1,0 +1,8 @@
+{
+  "name": "cardelrec-checker",
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.42.0",
+    "node-fetch": "^3.3.2"
+  }
+}
