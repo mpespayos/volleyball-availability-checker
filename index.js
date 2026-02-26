@@ -52,21 +52,41 @@ async function postDiscord(content) {
 async function checkAvailability() {
     const browser = await chromium.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
-
+    
+    await page.setExtraHTTPHeaders({
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    });
+    
     console.log(`[${nowToronto()}] Visiting grid page...`);
-    await page.goto(START_URL, { waitUntil: "domcontentloaded" });
-
-    console.log(`[${nowToronto()}] Clicking tile: "${TILE_TEXT}"...`);
-    await page.getByText(TILE_TEXT, { exact: true }).click();
-    await page.waitForLoadState("domcontentloaded");
-
+    await page.goto(START_URL, { waitUntil: "networkidle", timeout: 60000 });
+    console.log(`[${nowToronto()}] Grid URL: ${page.url()}`);
+    
+    console.log(`[${nowToronto()}] Looking for volleyball tile...`);
+    
+    const tile = page.getByText(/Volleyball\s*-\s*adult/i).first();
+    
+    const found = await tile.isVisible({ timeout: 45000 }).catch(() => false);
+    
+    if (!found) {
+        console.log(`[${nowToronto()}] Tile not found. Taking screenshot for debugging...`);
+        await page.screenshot({ path: "debug-grid.png", fullPage: true });
+        await browser.close();
+        throw new Error(
+            "Could not find 'Volleyball - adult' tile on grid page (see debug-grid.png artifact)."
+        );
+    }
+    
+    console.log(`[${nowToronto()}] Clicking volleyball tile...`);
+    await tile.click({ timeout: 45000 });
+    await page.waitForLoadState("networkidle", { timeout: 60000 });
+    
     console.log(`[${nowToronto()}] Landed on: ${page.url()}`);
-
+    
     const body = await page.locator("body").innerText();
     const isFull = body.includes("No more available time slots");
-
+    
     await browser.close();
-
     return isFull ? "FULL" : "AVAILABLE";
 }
 
@@ -104,3 +124,4 @@ main().catch((err) => {
     console.error("FATAL:", err);
     process.exit(1);
 });
+
