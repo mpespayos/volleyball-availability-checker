@@ -14,50 +14,60 @@ const day = est.getDay();
 const hour = est.getHours();
 
 if (!(day === 2 && hour >= 18)) {
-  process.exit(0);
+    process.exit(0);
 }
 
 function loadState() {
-  if (!fs.existsSync(STATE_FILE)) return { status: "FULL" };
-  return JSON.parse(fs.readFileSync(STATE_FILE));
+    if (!fs.existsSync(STATE_FILE)) return { status: "FULL" };
+    return JSON.parse(fs.readFileSync(STATE_FILE));
 }
 
 function saveState(status) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ status }));
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ status }));
 }
 
 async function notifyDiscord() {
-  await fetch(DISCORD_WEBHOOK, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content:
-        "CARDELREC Volleyball (Thursday 7:45–9:45 PM) is OPEN!"
-    }),
-  });
+    await fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+        content:
+            "CARDELREC Volleyball (Thursday 7:45–9:45 PM) is OPEN!"
+        }),
+    });
 }
 
 async function check() {
-  const browser = await chromium.launch({ args: ["--no-sandbox"] });
-  const page = await browser.newPage();
+    const browser = await chromium.launch({ args: ["--no-sandbox"] });
+    const page = await browser.newPage();
 
-  await page.goto(START_URL, { waitUntil: "domcontentloaded" });
-  await page.getByText("Volleyball - adult", { exact: true }).click();
-  await page.waitForLoadState("domcontentloaded");
+    await page.goto(START_URL, { waitUntil: "domcontentloaded" });
+    await page.getByText("Volleyball - adult", { exact: true }).click();
+    await page.waitForLoadState("domcontentloaded");
 
-  const body = await page.locator("body").innerText();
-  const isFull = body.includes("No more available time slots");
+    const body = await page.locator("body").innerText();
+    const isFull = body.includes("No more available time slots");
 
-  await browser.close();
+    await browser.close();
 
-  const currentStatus = isFull ? "FULL" : "AVAILABLE";
-  const previous = loadState().status;
+    const currentStatus = isFull ? "FULL" : "AVAILABLE";
+    const previous = loadState().status;
+  
+    const now = new Date().toLocaleString("en-US", {
+        timeZone: "America/Toronto"
+    });
 
-  if (currentStatus === "AVAILABLE" && previous === "FULL") {
-    await notifyDiscord();
-  }
+    await fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+        content: `Sanity Check:
+            Status: ${currentStatus}
+            Time: ${now}`
+        })
+    });
 
-  saveState(currentStatus);
+    saveState(currentStatus);
 }
 
 check();
