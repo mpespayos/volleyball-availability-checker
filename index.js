@@ -13,7 +13,7 @@ function inferStatus(finalUrl, bodyText) {
     if (bodyText.includes("No more available time slots")) return "FULL";
     // If it stays on TimeSelection but doesn't show the "full" text, it might still be available
     // but requires expanding a date row, or the site changed. Mark as UNKNOWN and include URL.
-    if (finalUrl.includes("/TimeSelection")) return "TIME_SELECTION_NO_FULL_TEXT";
+    if (finalUrl.includes("/TimeSelection")) return "FULL";
     return "UNKNOWN";
 }
 
@@ -57,3 +57,4 @@ async function check() {
 }
 
 check();
+
