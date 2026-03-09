@@ -117,7 +117,7 @@ async function checkCentre(browser, centre, state) {
     console.log(`${centre.name} | ${status}`);
 
     if (previous === undefined) {
-      await sendDiscord(`ℹ️ Initial check: **${status}** for ${centre.name}`);
+      await sendDiscord(`**${status}** for ${centre.name}`);
     } else if (available !== previous) {
       await sendDiscord(
         available
