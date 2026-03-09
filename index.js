@@ -121,8 +121,8 @@ async function checkCentre(browser, centre, state) {
     } else if (available !== previous) {
       await sendDiscord(
         available
-          ? `🏐 **AVAILABLE:** ${centre.name}`
-          : `⛔ **FULL:** ${centre.name}`
+          ? `**AVAILABLE:** ${centre.name}`
+          : `**FULL:** ${centre.name}`
       );
     }
 
