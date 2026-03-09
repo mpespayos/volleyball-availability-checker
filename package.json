@@ -1,5 +1,5 @@
 {
-  "name": "ottawa-volleyball-drop-in-notifier",
+  "name": "volleyball-availability-checker",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
